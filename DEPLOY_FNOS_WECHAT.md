@@ -159,6 +159,15 @@ cookies/toutiao_cookies.txt
 cookies/wechat_channels_yuanbao_cookies.txt
 ```
 
+获取方式：
+
+1. 在本机 Chrome 里登录对应平台：B站、抖音、快手、微博、头条/西瓜、小红书。
+2. 用浏览器扩展 `Get cookies.txt LOCALLY` 导出 Netscape 格式 cookies，按上面的文件名保存。
+3. 也可以用 `yt-dlp --cookies-from-browser chrome --cookies cookies/<文件名>.txt --simulate --skip-download "<平台视频链接>"` 从本机浏览器导出。
+4. 微信视频号不要用 yt-dlp 导元宝 cookie；在 Chrome 打开并登录 `https://yuanbao.tencent.com`，用扩展按 `tencent.com` 范围导出，确保包含父域 `.tencent.com` cookies，然后保存为 `cookies/wechat_channels_yuanbao_cookies.txt`。
+
+替换 cookies 文件后不需要重建镜像；下一次下载会重新读取。
+
 B站未登录时经常只能拿到 360P/480P。普通登录通常可拿 720P/1080P；高码率、4K、HDR 仍取决于大会员和视频源本身。
 
 微信视频号的稳定入口是 `https://weixin.qq.com/sph/...` 分享短链。不要转发视频号小卡片，当前 ClawBot 不能稳定接收这类卡片消息，后端拿不到可解析 payload。默认不接第三方公开解析 API，容器会本地直连腾讯元宝和视频号接口解析；因此需要把自己的元宝 Web cookie 放到 `cookies/wechat_channels_yuanbao_cookies.txt`，或设置 `WECHAT_CHANNELS_YUANBAO_COOKIE`。如果自建了解析服务，可以在 `config/savextube.toml` 里显式配置 `[wechat_channels].resolver_url`。

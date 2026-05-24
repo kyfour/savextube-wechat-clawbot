@@ -168,23 +168,44 @@ docker compose up -d
 
 Cookies 不是必需，但会影响清晰度、登录可见内容和解析成功率。文件放在宿主机 `cookies/` 目录，容器内路径为 `/app/cookies/`。
 
-| 平台 | 文件名 |
-| --- | --- |
-| B站 | `bilibili_cookies.txt` |
-| 抖音 | `douyin_cookies.txt` |
-| 快手 | `kuaishou_cookies.txt` |
-| 微博 | `weibo_cookies.txt` |
-| 头条 | `toutiao_cookies.txt` |
-| 小红书 | `xiaohongshu_cookies.txt` |
-| 微信视频号 | `wechat_channels_yuanbao_cookies.txt` |
+| 平台 | 文件名 | 先在浏览器确认登录 | 导出范围 |
+| --- | --- | --- | --- |
+| B站 | `bilibili_cookies.txt` | `https://www.bilibili.com` | `bilibili.com` |
+| 抖音 | `douyin_cookies.txt` | `https://www.douyin.com` | `douyin.com` |
+| 快手 | `kuaishou_cookies.txt` | `https://www.kuaishou.com` | `kuaishou.com` |
+| 微博 | `weibo_cookies.txt` | `https://weibo.com` | `weibo.com` |
+| 头条 | `toutiao_cookies.txt` | `https://www.toutiao.com` | `toutiao.com`；西瓜视频链接也可补导 `ixigua.com` |
+| 小红书 | `xiaohongshu_cookies.txt` | `https://www.xiaohongshu.com` | `xiaohongshu.com` |
+| 微信视频号 | `wechat_channels_yuanbao_cookies.txt` | `https://yuanbao.tencent.com` | `tencent.com`，需要包含父域 `.tencent.com` cookies |
 
-推荐在浏览器登录平台后导出 Netscape 格式 cookies。示例：
+推荐方式是用浏览器扩展 `Get cookies.txt LOCALLY` 导出：
+
+1. 在本机 Chrome 里打开上表对应网站并确认已经登录。
+2. 点击扩展，选择当前站点或上表的导出范围，导出 Netscape 格式 `cookies.txt`。
+3. 按上表文件名保存到项目 `cookies/` 目录，例如 `cookies/bilibili_cookies.txt`。
+4. 如果部署在 NAS，把这些 `.txt` 上传到 NAS 项目的 `cookies/` 目录；不需要重建镜像，下一次下载会重新读取。
+
+视频号比较特殊：只打开 `yuanbao.tencent.com` 导出可能不够，必须让导出的文件里包含 `.tencent.com` 父域登录 cookies。最稳做法是在扩展里按 `tencent.com` 导出或启用子域导出，然后保存为 `cookies/wechat_channels_yuanbao_cookies.txt`。
+
+也可以用本机浏览器的 yt-dlp 导出，适合 B站、抖音、快手、微博、头条、小红书。先安装：
 
 ```bash
-yt-dlp --cookies-from-browser chrome --cookies cookies/bilibili_cookies.txt --simulate --skip-download "https://www.bilibili.com"
+python3 -m pip install -U yt-dlp
 ```
 
-也可以用浏览器扩展 `Get cookies.txt LOCALLY` 导出。
+通用模板：
+
+```bash
+yt-dlp --cookies-from-browser chrome --cookies cookies/<文件名>.txt --simulate --skip-download "<该平台任意可访问的视频或笔记链接>"
+```
+
+B站示例：
+
+```bash
+yt-dlp --cookies-from-browser chrome --cookies cookies/bilibili_cookies.txt --simulate --skip-download "https://www.bilibili.com/video/BVxxxxxxxxxx"
+```
+
+如果使用 Edge，把 `chrome` 改为 `edge`。如果本机有多个 Chrome profile，可以用 `chrome:Profile 1` 这类写法指定 profile。yt-dlp 方式不适合微信视频号元宝 cookie，视频号优先用扩展按 `tencent.com` 导出。
 
 不要把 cookies、微信 session、`.env`、日志或下载文件提交到 Git。
 
