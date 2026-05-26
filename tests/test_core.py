@@ -9,9 +9,9 @@ import unittest
 from pathlib import Path
 
 from clawbot_wechat import FINDER_FEED_CARD_MARKER, ClawBotClient, ClawBotError
-from douyin_note_downloader import DouyinNoteDownloader, is_douyin_aweme_url, is_douyin_note_url
+from douyin_note_downloader import DouyinNoteDownloader, _safe_stem as _safe_douyin_stem, is_douyin_aweme_url, is_douyin_note_url
 from savextube_wechat import _bot_profiles, _collect_result_files, _parse_bool, _resolve_bot_profile
-from wechat_channels_downloader import WeChatChannelsDownloader
+from wechat_channels_downloader import WeChatChannelsDownloader, _safe_stem as _safe_wechat_channels_stem
 
 sys.modules.setdefault("yt_dlp", types.SimpleNamespace(YoutubeDL=object))
 
@@ -203,6 +203,17 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(video_result["success"])
         self.assertEqual(note_result["url"], "https://www.douyin.com/note/123")
         self.assertEqual(video_result["url"], "https://www.douyin.com/video/456")
+
+    def test_safe_filenames_are_limited_by_utf8_bytes(self):
+        long_title = "华为乾崑智驾享界S9T全智驾状态蠕行撞车？谁负责？" * 12
+        aweme_id = "7644047503168623217"
+        douyin_title = _safe_douyin_stem(long_title)
+        channels_title = _safe_wechat_channels_stem(long_title)
+        xhs_title = XiaohongshuDownloader().clean_filename(long_title)
+
+        self.assertLessEqual(len(f"{douyin_title} [{aweme_id}].mp4".encode("utf-8")), 255)
+        self.assertLessEqual(len(f"{channels_title}.mp4".encode("utf-8")), 255)
+        self.assertLessEqual(len(f"6a12d3cc0000000008000618_{xhs_title}".encode("utf-8")), 255)
 
     def test_wechat_channels_local_resolver_requires_cookie(self):
         downloader = WeChatChannelsDownloader()

@@ -22,6 +22,7 @@ import requests
 logger = logging.getLogger("savextube.xiaohongshu")
 
 ProgressCallback = Optional[Callable[[Dict[str, Any]], None]]
+MAX_FILENAME_BYTES = 150
 
 DEFAULT_HEADERS = {
     "User-Agent": (
@@ -197,7 +198,10 @@ class XiaohongshuDownloader:
 
     def clean_filename(self, filename: str) -> str:
         cleaned = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", filename or "").strip()
-        return cleaned[:100] or "untitled"
+        encoded = cleaned.encode("utf-8")
+        if len(encoded) > MAX_FILENAME_BYTES:
+            cleaned = encoded[:MAX_FILENAME_BYTES].decode("utf-8", errors="ignore").strip()
+        return cleaned or "untitled"
 
     def download_note(self, url: str, download_dir: str = "./downloads", progress_callback: ProgressCallback = None) -> Dict[str, Any]:
         try:

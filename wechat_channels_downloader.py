@@ -32,6 +32,7 @@ ProgressCallback = Optional[Callable[[Dict[str, Any]], None]]
 YUANBAO_PARSE_URL = "https://yuanbao.tencent.com/api/weixin/get_parse_result"
 CHANNELS_FEED_INFO_URL = "https://channels.weixin.qq.com/finder-preview/api/feed/get_feed_info"
 SPH_URL_PATTERN = re.compile(r"https?://weixin\.qq\.com/sph/[A-Za-z0-9_-]+[^\s<>'\"，。；、)）\]]*", re.IGNORECASE)
+MAX_STEM_BYTES = 150
 
 
 def is_wechat_channels_url(url: str) -> bool:
@@ -48,10 +49,17 @@ def extract_wechat_channels_urls(text: str) -> List[str]:
     return [f"https://{bare.group(1).rstrip('.,;，。；')}"] if bare else []
 
 
-def _safe_stem(value: str, fallback: str = "wechat_channels") -> str:
+def _truncate_utf8(value: str, max_bytes: int) -> str:
+    encoded = value.encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return value
+    return encoded[:max_bytes].decode("utf-8", errors="ignore").strip()
+
+
+def _safe_stem(value: str, fallback: str = "wechat_channels", max_bytes: int = MAX_STEM_BYTES) -> str:
     cleaned = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", value).strip()
     cleaned = re.sub(r"\s+", " ", cleaned)
-    return cleaned[:180] or fallback
+    return _truncate_utf8(cleaned, max_bytes) or fallback
 
 
 def _suffix_from_response(url: str, content_type: str) -> str:

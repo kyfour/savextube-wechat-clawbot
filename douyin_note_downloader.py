@@ -31,6 +31,7 @@ NOTE_ID_RE = re.compile(r"/(?:share/)?note/(\d+)", re.IGNORECASE)
 VIDEO_ID_RE = re.compile(r"/(?:share/)?video/(\d+)", re.IGNORECASE)
 ROUTER_DATA_RE = re.compile(r"window\._ROUTER_DATA\s*=\s*(\{.*?\})\s*</script>", re.DOTALL)
 BAD_CONTENT_TYPES = ("text/html", "application/json")
+MAX_STEM_BYTES = 150
 
 
 class DouyinNoteError(RuntimeError):
@@ -57,10 +58,17 @@ def extract_douyin_aweme_id(url: str) -> Optional[str]:
     return match.group(1) if match else None
 
 
-def _safe_stem(value: str, fallback: str = "douyin_note") -> str:
+def _truncate_utf8(value: str, max_bytes: int) -> str:
+    encoded = value.encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return value
+    return encoded[:max_bytes].decode("utf-8", errors="ignore").strip()
+
+
+def _safe_stem(value: str, fallback: str = "douyin_note", max_bytes: int = MAX_STEM_BYTES) -> str:
     cleaned = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", value or "").strip()
     cleaned = re.sub(r"\s+", " ", cleaned)
-    return cleaned[:120] or fallback
+    return _truncate_utf8(cleaned, max_bytes) or fallback
 
 
 def _iter_dict_values(data: Any) -> Iterable[Any]:
